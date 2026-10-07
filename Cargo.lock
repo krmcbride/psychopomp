@@ -1937,6 +1937,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "psychopomp-read-through-cache"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "psychopomp",
+ "serde_json",
+]
+
+[[package]]
 name = "psychopomp-render"
 version = "0.1.0"
 dependencies = [
