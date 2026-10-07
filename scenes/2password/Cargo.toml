@@ -1,5 +1,6 @@
 [package]
 name = "psychopomp-two-password"
+default-run = "psychopomp-two-password"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"

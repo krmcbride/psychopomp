@@ -1,5 +1,6 @@
 [package]
 name = "psychopomp-hello"
+default-run = "psychopomp-hello"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
