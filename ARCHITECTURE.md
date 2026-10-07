@@ -291,7 +291,7 @@ punctuation, and number words versus digits are ignored); `phrases` finds every
 occurrence, so a chant can cue one beat per word. `psychopomp::narration` places
 a clip as a Script Clip whose phrase lookups return plan-clock times. Clips come
 from two producers. `scripts/narrate.ts` writes loudness-normalized MP3s, Whisper
-word timings, and a manifest of exact durations (`--draft` uses macOS `say`);
+word timings, and a manifest of exact durations (`--draft` uses macOS `say`, or `espeak-ng` elsewhere);
 `Narration::load` reads it. `psychopomp-media` produces the same clips from
 declarations in the Scene Program itself (see below). The `pr-walkthrough` Scene
 Program keys every reveal to a phrase and fails with the clip and phrase when

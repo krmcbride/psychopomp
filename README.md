@@ -6,7 +6,8 @@ an interactive presentation.
 
 Every frame is a pure function of time, so any frame renders identically in any
 order, and interrupted motion keeps its velocity. It is an early, thoroughly
-vibe-coded prototype, tested on macOS (Metal).
+vibe-coded prototype, tested on macOS (Metal) and Linux (Vulkan; see
+[docs/LINUX.md](docs/LINUX.md)).
 
 ## What it draws
 
@@ -120,6 +121,10 @@ cargo test --workspace
 cargo fmt --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ```
+
+On Linux, or anywhere with Nix, `nix develop` provides the toolchain, FFmpeg,
+Bun, and the Vulkan and Wayland libraries; [docs/LINUX.md](docs/LINUX.md) covers
+GPU drivers, narration, and fonts.
 
 [AGENTS.md](AGENTS.md) has the engineering and verification rules. Psychopomp is
 licensed under the [MIT License](LICENSE). CommitMono is bundled under the SIL

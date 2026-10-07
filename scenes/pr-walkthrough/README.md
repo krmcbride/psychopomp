@@ -5,7 +5,7 @@ Sequence Diagram that plays the broken behavior and replays the fix in the same
 slots, then an editor that animates the change as a diff with Line Marks.
 
 ```sh
-# Voice (only changed clips are regenerated; --draft uses macOS `say`)
+# Voice (only changed clips are regenerated; --draft uses macOS `say`, or `espeak-ng` elsewhere)
 2password run --env 'FISH_AUDIO_API_KEY=op://…' -- bun scripts/narrate.ts scenes/pr-walkthrough/narration/script.json
 # Emit, check, and render
 cargo run -p psychopomp-pr-walkthrough

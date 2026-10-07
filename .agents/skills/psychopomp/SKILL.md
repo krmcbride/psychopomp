@@ -38,7 +38,7 @@ authoring. Engineering rules are in [`AGENTS.md`](https://github.com/kitlangton/
    seconds spoken and every planned visual beat has a distinct anchor phrase in it.
 
 3. **Voice it (optional).** Draft first with no credentials (`--draft` uses macOS
-   `say`), or synthesize final narration with **ElevenLabs** (`engine: "elevenlabs"`,
+   `say`, or `espeak-ng` on Linux), or synthesize final narration with **ElevenLabs** (`engine: "elevenlabs"`,
    default model `eleven_v4`) or **Fish Audio** (`engine: "fish"`):
    ```json
    {

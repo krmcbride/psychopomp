@@ -477,7 +477,7 @@ scene.cue("intro-end", said.end(), said.end());
 ```sh
 PSYCHOPOMP_MEDIA=plan cargo run -p <scene>   # print the delta (+ ~ = -) and cost; zero API calls
 cargo run -p <scene>                         # generate what is missing or changed
-PSYCHOPOMP_MEDIA=draft cargo run -p <scene>  # time it with macOS say and silent sfx first
+PSYCHOPOMP_MEDIA=draft cargo run -p <scene>  # time it with macOS say and silent sfx first (macOS only)
 PSYCHOPOMP_MEDIA=prune cargo run -p <scene>  # zero calls; delete orphans and superseded files
 cargo run -p psychopomp-media -- show scenes/<scene>
 ```
@@ -533,7 +533,7 @@ reusable for any code explainer:
   for a `Pr`, `behavior`, `code`); `scenes/config-migration` reuses it.
 
 ```sh
-# 1. Voice the script (Fish Audio via 1Password; --draft uses macOS `say`).
+# 1. Voice the script (Fish Audio via 1Password; --draft uses macOS `say`, or `espeak-ng` elsewhere).
 2password run --env 'FISH_AUDIO_API_KEY=op://…' -- \
   bun scripts/narrate.ts scenes/pr-walkthrough/narration/script.json
 # 2. Emit the reel; phrase lookups fail loudly if narration changed.
