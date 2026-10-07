@@ -6,6 +6,8 @@
 // Usage:
 //   bun scripts/sheet.ts <plan-or-reel.json> <from:to:step | t1,t2,...> [--theme opencode]
 //     [--cols 4] [--crop x,y,w,h] [--shutter] [--out output/sheet.jpg]
+// Labels use SHEET_FONT, else macOS's Menlo, else the bundled CommitMono.
+import { existsSync } from "node:fs"
 import { rm } from "node:fs/promises"
 import path from "node:path"
 
@@ -25,6 +27,8 @@ const crop = args.includes("--crop") ? flag("--crop", "").split(",").map(Number)
 if (crop && (crop.length !== 4 || crop.some(Number.isNaN))) throw new Error("--crop takes x,y,w,h")
 
 const root = path.join(import.meta.dir, "..")
+const menlo = "/System/Library/Fonts/Menlo.ttc"
+const font = process.env.SHEET_FONT ?? (existsSync(menlo) ? menlo : path.join(root, "assets/fonts/CommitMono-400-Regular.otf"))
 const binary = path.join(root, "target/release/psychopomp")
 if (Bun.spawnSync(["cargo", "build", "--release", "-q"], { cwd: root, stderr: "inherit" }).exitCode !== 0) throw new Error("build failed")
 const frames = path.join(root, "output/sheet-frames")
@@ -46,7 +50,7 @@ const montage = Bun.spawnSync(
       crop ? `${file}[${crop[2]}x${crop[3]}+${crop[0]}+${crop[1]}]` : file,
     ]),
     "-tile", `${cols}x`, "-geometry", geometry, "-background", "#111", "-fill", "#ddd",
-    "-font", "/System/Library/Fonts/Menlo.ttc", "-pointsize", "22", path.resolve(out),
+    "-font", font, "-pointsize", "22", path.resolve(out),
   ],
   { stderr: "pipe" },
 )

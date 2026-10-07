@@ -23,7 +23,7 @@ use crate::{
     lock::{Entry, Lock, Word},
     spec::{
         Backend, ELEVEN_FORMAT, ELEVEN_V4, FISH_FORMAT, FISH_FREE, Route, SAY_DEFAULT, SAY_FORMAT,
-        SPEECH_POST, Said, Settings, Spec, SpeechSpec, whisper_align,
+        SPEECH_POST, Said, Settings, Spec, SpeechSpec, WHISPER, whisper_align,
     },
 };
 
@@ -61,6 +61,9 @@ struct ManifestClip {
     text_hash: String,
     engine: String,
     request_id: Option<String>,
+    /// The transcriber that timed the words, when narrate.ts did not use
+    /// mlx-whisper's default model.
+    whisper: Option<String>,
 }
 
 /// A JSON object in document order, as JavaScript's `JSON.stringify` sees it.
@@ -118,6 +121,12 @@ pub fn adopt(narration: &Path, root: &Path) -> Result<Vec<String>> {
         if hash != clip.text_hash {
             bail!(
                 "narration.json records '{}' for different text or settings than script.json; regenerate it instead",
+                clip.id
+            );
+        }
+        if let Some(whisper) = &clip.whisper {
+            bail!(
+                "'{}' was timed by {whisper}, but the lock records Whisper timings as {WHISPER}; regenerate it with mlx-whisper",
                 clip.id
             );
         }

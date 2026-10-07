@@ -382,4 +382,17 @@ fn adopted_narration_is_up_to_date_without_regenerating() {
     .unwrap();
     let error = crate::adopt(&narration, &root).unwrap_err().to_string();
     assert!(error.contains("different text"), "{error}");
+    // Words timed by another transcriber would not match the key's Whisper model.
+    fs::write(narration.join("script.json"), &script).unwrap();
+    let manifest = fs::read_to_string(narration.join("narration.json")).unwrap();
+    fs::write(
+        narration.join("narration.json"),
+        manifest.replace(
+            r#""requestId": "abc""#,
+            r#""requestId": "abc", "whisper": "faster:large-v3""#,
+        ),
+    )
+    .unwrap();
+    let error = crate::adopt(&narration, &root).unwrap_err().to_string();
+    assert!(error.contains("timed by faster:large-v3"), "{error}");
 }

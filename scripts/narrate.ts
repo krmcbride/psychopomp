@@ -5,7 +5,13 @@
 // Usage:
 //   FISH_AUDIO_API_KEY=... bun scripts/narrate.ts scenes/<scene>/narration/script.json
 //   bun scripts/narrate.ts <script.json> --only intro,outro   # force selected clips
-//   bun scripts/narrate.ts <script.json> --draft               # macOS `say`, no credentials
+//   bun scripts/narrate.ts <script.json> --draft               # local voice, no credentials
+//
+// Drafts use macOS `say` (SAY_VOICE, default Samantha) and elsewhere `espeak-ng`
+// (ESPEAK_VOICE, default en-us). Word timings come from mlx-whisper on macOS and
+// elsewhere from faster-whisper (an installed `whisper-ctranslate2`, else through
+// `uvx`); WHISPER_BACKEND=mlx|faster and WHISPER_MODEL override the choice. The Fish engine
+// runs the fish-say helper at FISH_SAY (default ~/.opencode/skill/fish-audio/...).
 //
 // script.json: { "engine"?: "fish" | "elevenlabs", "voice"?: string, "speed"?: number,
 //   "model"?: string, "settings"?: { "stability": number, "similarity": number },
@@ -33,7 +39,19 @@ type Script = {
   loudness?: "dynamic" | "linear"
   clips: { id: string; text: string }[]
 }
-type Clip = { id: string; file: string; words: string; durationNanos: number; textHash: string; engine: string; model?: string; requestId?: string }
+type Clip = {
+  id: string
+  file: string
+  words: string
+  durationNanos: number
+  textHash: string
+  engine: string
+  model?: string
+  requestId?: string
+  // The transcriber that timed the words, recorded only when it is not mlx-whisper's
+  // default model: `psychopomp-media adopt` keys word timings by that model.
+  whisper?: string
+}
 
 const args = Bun.argv.slice(2)
 const scriptPath = args.find((arg) => !arg.startsWith("--"))
@@ -42,12 +60,19 @@ const only = new Set(args.includes("--only") ? args[args.indexOf("--only") + 1].
 // Draft narration lets a scene be timed before the final voice exists. Phrase-keyed
 // cues re-derive themselves when final clips replace the drafts.
 const fishSay = process.env.FISH_SAY ?? path.join(process.env.HOME!, ".opencode/skill/fish-audio/scripts/fish-say.ts")
-const whisperModel = process.env.WHISPER_MODEL ?? "mlx-community/whisper-large-v3-mlx"
+const macos = process.platform === "darwin"
+const mlxDefault = "mlx-community/whisper-large-v3-mlx"
+const whisperBackend = process.env.WHISPER_BACKEND ?? (macos ? "mlx" : "faster")
+if (!["mlx", "faster"].includes(whisperBackend)) throw new Error(`WHISPER_BACKEND=${whisperBackend}: use mlx or faster`)
+const whisperModel = process.env.WHISPER_MODEL ?? (whisperBackend === "mlx" ? mlxDefault : "large-v3")
+const whisper = whisperBackend === "mlx" && whisperModel === mlxDefault ? undefined : `${whisperBackend}:${whisperModel}`
 
 const dir = path.dirname(path.resolve(scriptPath))
 const script: Script = await Bun.file(scriptPath).json()
-const engine = args.includes("--draft") ? "say" : script.engine ?? "fish"
-if (!["say", "fish", "elevenlabs"].includes(engine)) throw new Error(`unknown narration engine '${engine}'`)
+const engine = args.includes("--draft") ? (macos ? "say" : "espeak") : script.engine ?? "fish"
+if (!["say", "espeak", "fish", "elevenlabs"].includes(engine)) throw new Error(`unknown narration engine '${engine}'`)
+if (engine === "fish" && !(await Bun.file(fishSay).exists()))
+  throw new Error(`Fish Audio needs the fish-say helper; none at ${fishSay} (set FISH_SAY to its path)`)
 if (engine === "elevenlabs" && (!script.voice || !process.env.ELEVENLABS_API_KEY))
   throw new Error("ElevenLabs requires script.voice and ELEVENLABS_API_KEY")
 if (engine === "elevenlabs" && script.speed !== undefined)
@@ -93,9 +118,12 @@ for (const clip of script.clips) {
     const text = path.join(work, "text.txt")
     const raw = path.join(work, "raw.wav")
     let requestId: string | undefined
-    await Bun.write(text, engine === "say" ? clip.text.replace(/\[[^\]]*\]\s*/g, "") : clip.text)
+    const local = engine === "say" || engine === "espeak"
+    await Bun.write(text, local ? clip.text.replace(/\[[^\]]*\]\s*/g, "") : clip.text)
     if (engine === "say")
       run(["say", "-v", process.env.SAY_VOICE ?? "Samantha", "-f", text, "-o", raw, "--data-format=LEI16@48000"])
+    else if (engine === "espeak")
+      run(["espeak-ng", "-v", process.env.ESPEAK_VOICE ?? "en-us", "-f", text, "-w", raw])
     else if (engine === "elevenlabs") {
       // One speaker through Text to Dialogue: the same endpoint supports future
       // multi-voice scenes, but this script deliberately owns one narrator.
@@ -130,10 +158,18 @@ for (const clip of script.clips) {
         ? `volume=${(-16 - integratedLoudness(raw)).toFixed(2)}dB,alimiter=limit=0.84:level=0:latency=1`
         : "loudnorm=I=-16:TP=-1.5:LRA=11"
     run(["ffmpeg", "-y", "-loglevel", "error", "-i", raw, "-af", normalize, "-ar", "48000", "-ac", "1", "-b:a", "160k", path.join(dir, file)])
-    run([
-      "uvx", "--from", "mlx-whisper", "mlx_whisper", "--model", whisperModel, "--word-timestamps", "True",
-      "--output-format", "json", "--output-dir", work, "--output-name", clip.id, path.join(dir, file),
-    ])
+    // Both write OpenAI Whisper's JSON, named here after the clip.
+    if (whisperBackend === "mlx")
+      run([
+        "uvx", "--from", "mlx-whisper", "mlx_whisper", "--model", whisperModel, "--word-timestamps", "True",
+        "--output-format", "json", "--output-dir", work, "--output-name", clip.id, path.join(dir, file),
+      ])
+    else
+      run([
+        ...(Bun.which("whisper-ctranslate2") ? ["whisper-ctranslate2"] : ["uvx", "whisper-ctranslate2"]),
+        "--model", whisperModel, "--word_timestamps", "True", "--output_format", "json", "--output_dir", work,
+        path.join(dir, file),
+      ])
     // Whisper writes bare NaN statistics for wordless audio such as a howl.
     const transcript = JSON.parse((await Bun.file(path.join(work, `${clip.id}.json`)).text()).replace(/\bNaN\b/g, "null"))
     let previousEnd = 0
@@ -147,7 +183,7 @@ for (const clip of script.clips) {
         return { word: word.word.trim(), start, end }
       })
     await Bun.write(path.join(dir, words), JSON.stringify({ wordTimings }, null, 1) + "\n")
-    clips.push({ id: clip.id, file, words, durationNanos: durationNanos(path.join(dir, file)), textHash: hash, engine, model, requestId })
+    clips.push({ id: clip.id, file, words, durationNanos: durationNanos(path.join(dir, file)), textHash: hash, engine, model, requestId, whisper })
     // Preserve completed paid generations if a later clip fails.
     const checkpoint = script.clips.flatMap(({ id }) => {
       const saved = clips.find((item) => item.id === id) ?? previous[id]
