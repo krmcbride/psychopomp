@@ -1,7 +1,8 @@
 //! Typefaces a Stage label or subtitles can be set in. CommitMono is bundled
 //! and the default; the others are faces macOS installs, as the Helvetica
-//! Neue used for prose and headers already is, so another machine falls back
-//! to whatever it has.
+//! Neue used for prose and headers already is. Where they are missing, the
+//! renderer substitutes bundled Archivo for Helvetica Neue and Bodoni Moda for
+//! Didot, so the same plan renders in close but different faces there.
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]

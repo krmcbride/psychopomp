@@ -125,7 +125,7 @@ Renderer crate, pixels and delivery:
 - `crates/psychopomp-render/src/render.rs`: concrete headless `wgpu` renderer and sprite compositor
 - `crates/psychopomp-render/src/scene.wgsl`: editor geometry and focus shader
 - `crates/psychopomp-render/src/render/theme.rs`: named native/export paint palettes; no layout or motion
-- `crates/psychopomp-render/src/render/fonts.rs`: bundled CommitMono faces, and the installed faces a `Face` selects
+- `crates/psychopomp-render/src/render/fonts.rs`: bundled CommitMono faces, the installed faces a `Face` selects, and bundled Archivo and Bodoni Moda stand-ins where those are missing
 - `crates/psychopomp-render/src/render/text.rs` and `text/raster.rs`: typed plain-text cache and exact native glyph rasterization
 - `crates/psychopomp-render/src/render/rich_text.rs`: bounded Markdown shaping, decoration, and theme-aware glyph cache
 - `crates/psychopomp-render/src/render/line_marks.rs`: coverage union for editor diff backgrounds
@@ -581,7 +581,9 @@ The Adapter keeps these details private:
 - headless Metal adapter and device creation
 - WGSL pipeline and uniforms
 - bundled CommitMono (`render/fonts.rs`: compiled-in faces replace any installed
-  CommitMono; system fonts are glyph fallback only) and raster-sprite caching by
+  CommitMono; system fonts are glyph fallback only; Archivo and Bodoni Moda
+  answer to Helvetica Neue and Didot where those are not installed) and
+  raster-sprite caching by
   stable line ID
 - texture-to-buffer row alignment
 - asynchronous mapping and GPU polling

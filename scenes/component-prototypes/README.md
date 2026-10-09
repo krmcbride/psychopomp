@@ -21,8 +21,8 @@ another playback implementation. The existing lesson deck and grid are untouched
 4. **Composition** — those same three recipes together, with no new renderer.
 
 No enclosing cards, fake editor windows, repeated chapter heading, or on-canvas
-keyboard legend. Helvetica Neue is requested for proportional text (system font
-fallback applies on other platforms); monospace remains available as CommitMono.
+keyboard legend. Helvetica Neue is requested for proportional text (bundled Archivo
+stands in where it is not installed); monospace remains available as CommitMono.
 Glyphs are shaped before playback, not resized using a character-count heuristic.
 Entering and leaving words soften with the existing fade (up to a 4-output-pixel
 blur sampling offset), resolving to exactly sharp at full opacity. Retained words,

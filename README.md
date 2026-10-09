@@ -127,6 +127,7 @@ Bun, and the Vulkan and Wayland libraries; [docs/LINUX.md](docs/LINUX.md) covers
 GPU drivers, narration, and fonts.
 
 [AGENTS.md](AGENTS.md) has the engineering and verification rules. Psychopomp is
-licensed under the [MIT License](LICENSE). CommitMono is bundled under the SIL
-Open Font License (`assets/fonts/OFL.txt`); Phosphor icons under the MIT License
+licensed under the [MIT License](LICENSE). CommitMono, and the Archivo and
+Bodoni Moda stand-ins for Helvetica Neue and Didot, are bundled under the SIL
+Open Font License (`assets/fonts/`); Phosphor icons under the MIT License
 (`assets/icons/LICENSE`).

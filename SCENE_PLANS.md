@@ -1183,9 +1183,9 @@ their fuller documentation elsewhere.
   (Helvetica Neue Regular and Bold), `serif` and
   `serif-italic` (Didot), `light` (Helvetica Neue Light), or `shout`
   (Helvetica Neue Condensed Black), set with `StageElement::label(..).face(Face::Serif)`;
-  the non-mono faces are installed by macOS, and a machine without them shapes the
-  text in whatever face its font database substitutes, so the same plan renders
-  in another typeface there), `ring`
+  the non-mono faces are installed by macOS, and a machine without them uses
+  bundled stand-ins, Archivo and Bodoni Moda, so the same plan renders in close
+  but different faces there), `ring`
   (`at`, `radius`, `thickness`), `bolt` and `shield` (see Effects below), and the
   diagram vocabulary below (`form`, `shape`, `path`, `icon`), plus `post` (`bloom`,
   `grain`, `vignette`,

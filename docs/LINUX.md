@@ -75,10 +75,13 @@ resources already in a lock, work everywhere.
 
 CommitMono is bundled, so code and labels match on every machine. Prose and
 display faces (`Face::Sans`, `Serif`, `Light`, `Shout`, and headers that use
-them) ask for Helvetica Neue and Didot, which macOS installs. Elsewhere
-cosmic-text substitutes an installed face, so those frames differ from macOS
-renders. Contact sheets label tiles with `SHEET_FONT`, else Menlo on macOS, else
-the bundled CommitMono.
+them) ask for Helvetica Neue and Didot, which macOS installs. Where a family is
+not installed, bundled stand-ins answer to its name: Archivo (Regular, Bold,
+Light, and Condensed Black) for Helvetica Neue, and Bodoni Moda (Regular and
+Italic) for Didot. Frames therefore match on every Linux machine, and are close
+to macOS renders without matching them. Installing Helvetica Neue or Didot
+makes the renderer use them instead. Contact sheets label tiles with
+`SHEET_FONT`, else Menlo on macOS, else the bundled CommitMono.
 
 ## Determinism across platforms
 
