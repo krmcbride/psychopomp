@@ -4,7 +4,11 @@ use psychopomp::{
     math::{Vec2, shapes::polygon_distance},
 };
 
-use super::{super::blend_pixel, super::theme::mix, Bounds, rounded_rect_distance};
+use super::{
+    super::theme::mix,
+    super::{blend_pixel, round_byte},
+    Bounds, rounded_rect_distance,
+};
 
 const CAMERA_DISTANCE: f32 = 1_800.0;
 const BYTES_PER_PIXEL: usize = 4;
@@ -163,9 +167,9 @@ impl SourceTreatment {
             self.tint,
         );
         [
-            (rgb[0] * 255.0).round() as u8,
-            (rgb[1] * 255.0).round() as u8,
-            (rgb[2] * 255.0).round() as u8,
+            round_byte(rgb[0] * 255.0),
+            round_byte(rgb[1] * 255.0),
+            round_byte(rgb[2] * 255.0),
             color[3],
         ]
     }
@@ -254,8 +258,10 @@ impl<'a> RgbaSource<'a> {
     fn sample(self, x: f32, y: f32) -> [u8; 4] {
         let x = x.clamp(0.0, self.size[0] as f32 - 1.0);
         let y = y.clamp(0.0, self.size[1] as f32 - 1.0);
-        let left = x.floor() as i32;
-        let top = y.floor() as i32;
+        // Clamped coordinates are non-negative (or NaN, which converts to 0 as
+        // `floor` would), so truncation is `floor` without a libm call.
+        let left = x as i32;
+        let top = y as i32;
         // Constant 2x2 neighborhoods have exactly the same filtered RGBA at every
         // fractional position. Flat card faces and transparent padding need no
         // premultiply/interpolate/unpremultiply work; edges keep the original filter.
@@ -308,10 +314,10 @@ impl<'a> RgbaSource<'a> {
             return [0; 4];
         }
         [
-            (premultiplied[0] / alpha * 255.0).round() as u8,
-            (premultiplied[1] / alpha * 255.0).round() as u8,
-            (premultiplied[2] / alpha * 255.0).round() as u8,
-            (alpha * 255.0).round() as u8,
+            round_byte(premultiplied[0] / alpha * 255.0),
+            round_byte(premultiplied[1] / alpha * 255.0),
+            round_byte(premultiplied[2] / alpha * 255.0),
+            round_byte(alpha * 255.0),
         ]
     }
 }
@@ -1295,10 +1301,10 @@ fn sample_source_blurred(source: RgbaSource<'_>, x: f32, y: f32, blur: f32) -> [
         return [0; 4];
     }
     [
-        (premultiplied[0] / alpha * 255.0).round() as u8,
-        (premultiplied[1] / alpha * 255.0).round() as u8,
-        (premultiplied[2] / alpha * 255.0).round() as u8,
-        (alpha * 255.0).round() as u8,
+        round_byte(premultiplied[0] / alpha * 255.0),
+        round_byte(premultiplied[1] / alpha * 255.0),
+        round_byte(premultiplied[2] / alpha * 255.0),
+        round_byte(alpha * 255.0),
     ]
 }
 

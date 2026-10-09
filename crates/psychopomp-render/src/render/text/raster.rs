@@ -98,14 +98,52 @@ pub(crate) fn blend_pixel(destination: &mut [u8], source: [u8; 4], opacity: f32)
         let output = (source_channel * source_alpha
             + destination_channel * destination_alpha * (1.0 - source_alpha))
             / output_alpha;
-        destination[channel] = (output * 255.0).round() as u8;
+        destination[channel] = round_byte(output * 255.0);
     }
-    destination[3] = (output_alpha * 255.0).round() as u8;
+    destination[3] = round_byte(output_alpha * 255.0);
+}
+
+/// `value.round() as u8`, without a libm call: baseline x86-64 has no rounding
+/// instruction, and per-pixel compositing spends much of its time here.
+pub(crate) fn round_byte(value: f32) -> u8 {
+    let value = value.clamp(0.0, 255.0);
+    let whole = value as u8;
+    // `value - whole` is exact for 0..=255, so halves round away from zero.
+    if value - f32::from(whole) >= 0.5 {
+        whole + 1
+    } else {
+        whole
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn round_byte_matches_round_at_every_half_and_its_neighbours() {
+        let mut values = vec![
+            f32::NAN,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            -0.0,
+            1e10,
+            -1e10,
+        ];
+        for whole in -2..=258 {
+            for value in [whole as f32, whole as f32 + 0.5] {
+                values.extend([value.next_down(), value, value.next_up()]);
+            }
+        }
+        values.extend((0..=65_536).map(|step| step as f32 / 65_536.0 * 256.0));
+        values.extend((0..=255).flat_map(|byte| {
+            let unit = byte as f32 / 255.0;
+            [unit * 255.0, unit * 0.37 * 255.0, unit * unit * 255.0]
+        }));
+        for value in values {
+            assert_eq!(round_byte(value), value.round() as u8, "{value:?}");
+        }
+    }
+
     #[test]
     fn overlapping_rectangles_keep_straight_alpha_bytes_and_clip_at_the_original_origin() {
         let mut pixel = [0; 4];

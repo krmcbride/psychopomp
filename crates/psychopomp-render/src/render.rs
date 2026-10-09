@@ -45,7 +45,9 @@ mod venn;
 mod viz;
 mod window;
 mod wipe;
-use text::{PlainTextSpec, TextSprite, blend_pixel, blend_pixel_at, make_sprite, paint_rect};
+use text::{
+    PlainTextSpec, TextSprite, blend_pixel, blend_pixel_at, make_sprite, paint_rect, round_byte,
+};
 
 pub(crate) use callout::CalloutPose;
 pub(crate) use changed_files::ChangedFilesLayout;

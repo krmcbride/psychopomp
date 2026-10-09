@@ -6,7 +6,14 @@ pub(crate) fn rounded_rect_distance(local: [f32; 2], size: [f32; 2], radius: f32
     let radius = radius.min(size[0].min(size[1]) * 0.5);
     let dx = local[0].abs() - (size[0] * 0.5 - radius);
     let dy = local[1].abs() - (size[1] * 0.5 - radius);
-    dx.max(0.0).hypot(dy.max(0.0)) + dx.max(dy).min(0.0) - radius
+    // Off the corner arcs one leg is zero, where `hypot` is exactly the other
+    // leg; most pixels of a card skip the libm call.
+    let outside = if dx <= 0.0 || dy <= 0.0 {
+        dx.max(0.0) + dy.max(0.0)
+    } else {
+        dx.max(0.0).hypot(dy.max(0.0))
+    };
+    outside + dx.max(dy).min(0.0) - radius
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -75,6 +82,41 @@ impl Edges {
             right: value,
             bottom: value,
             left: value,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn rounded_rect_distance_matches_hypot_everywhere() {
+        let reference = |local: [f32; 2], size: [f32; 2], radius: f32| {
+            let radius = radius.min(size[0].min(size[1]) * 0.5);
+            let dx = local[0].abs() - (size[0] * 0.5 - radius);
+            let dy = local[1].abs() - (size[1] * 0.5 - radius);
+            dx.max(0.0).hypot(dy.max(0.0)) + dx.max(dy).min(0.0) - radius
+        };
+        for (size, radius) in [
+            ([1497.6, 842.4], 28.0),
+            ([40.0, 40.0], 30.0),
+            ([9.0, 3.0], 0.0),
+        ] {
+            for y in -500..=500 {
+                for x in -800..=800 {
+                    let local = [x as f32 * 1.03 + 0.5, y as f32 * 0.97 + 0.5];
+                    let distance = super::rounded_rect_distance(local, size, radius);
+                    assert_eq!(
+                        distance,
+                        reference(local, size, radius),
+                        "{local:?} {size:?}"
+                    );
+                }
+            }
+        }
+        for local in [[f32::NAN, 1.0], [1e9, f32::NAN], [f32::INFINITY, 0.0]] {
+            let distance = super::rounded_rect_distance(local, [10.0, 10.0], 2.0);
+            let expected = reference(local, [10.0, 10.0], 2.0);
+            assert!(distance == expected || (distance.is_nan() && expected.is_nan()));
         }
     }
 }
