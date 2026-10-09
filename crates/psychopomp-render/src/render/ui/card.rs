@@ -360,20 +360,21 @@ impl<'a> UiCanvas<'a> {
         let max_x = bounds.right().ceil().min(self.size[0] as f32) as i32;
         let min_y = bounds.origin[1].floor().max(0.0) as i32;
         let max_y = bounds.bottom().ceil().min(self.size[1] as f32) as i32;
-        for y in min_y..max_y {
+        let clips = &self.clips;
+        for_each_card_row(self.pixels, self.size, min_y, max_y - 1, |y, row| {
             for x in min_x..max_x {
                 let point = [x as f32 + 0.5, y as f32 + 0.5];
                 let coverage = rounded_coverage(point, bounds, corner_radius)
-                    * self.clip_coverage(point)
+                    * clip_coverage(clips, point)
                     * opacity.clamp(0.0, 1.0);
                 if coverage <= 0.0 {
                     continue;
                 }
                 let color = fill.sample(point, bounds);
-                let index = (y as usize * self.size[0] as usize + x as usize) * BYTES_PER_PIXEL;
-                blend_pixel(&mut self.pixels[index..index + 4], color.0, coverage);
+                let index = x as usize * BYTES_PER_PIXEL;
+                blend_pixel(&mut row[index..index + 4], color.0, coverage);
             }
-        }
+        });
     }
 
     pub fn surface(&mut self, bounds: Bounds, style: SurfaceStyle, opacity: f32) {
@@ -558,7 +559,8 @@ impl<'a> UiCanvas<'a> {
         let max_x = bounds.right().ceil().min(self.size[0] as f32) as i32;
         let min_y = bounds.origin[1].floor().max(0.0) as i32;
         let max_y = bounds.bottom().ceil().min(self.size[1] as f32) as i32;
-        for y in min_y..max_y {
+        let clips = &self.clips;
+        for_each_card_row(self.pixels, self.size, min_y, max_y - 1, |y, row| {
             for x in min_x..max_x {
                 let point = [x as f32 + 0.5, y as f32 + 0.5];
                 if point[0] < display.origin[0]
@@ -568,7 +570,7 @@ impl<'a> UiCanvas<'a> {
                 {
                     continue;
                 }
-                let coverage = self.clip_coverage(point) * opacity.clamp(0.0, 1.0);
+                let coverage = clip_coverage(clips, point) * opacity.clamp(0.0, 1.0);
                 if coverage <= 0.0 {
                     continue;
                 }
@@ -577,17 +579,21 @@ impl<'a> UiCanvas<'a> {
                 let source_y =
                     (point[1] - display.origin[1]) / display.size[1] * source_size[1] - 0.5;
                 let color = source.sample(source_x, source_y);
-                let index = (y as usize * self.size[0] as usize + x as usize) * BYTES_PER_PIXEL;
-                blend_pixel(&mut self.pixels[index..index + 4], color, coverage);
+                let index = x as usize * BYTES_PER_PIXEL;
+                blend_pixel(&mut row[index..index + 4], color, coverage);
             }
-        }
+        });
     }
 
     fn clip_coverage(&self, point: [f32; 2]) -> f32 {
-        self.clips.iter().fold(1.0, |coverage, clip| {
-            coverage * rounded_coverage(point, clip.bounds, clip.corner_radius)
-        })
+        clip_coverage(&self.clips, point)
     }
+}
+
+fn clip_coverage(clips: &[Clip], point: [f32; 2]) -> f32 {
+    clips.iter().fold(1.0, |coverage, clip| {
+        coverage * rounded_coverage(point, clip.bounds, clip.corner_radius)
+    })
 }
 
 impl Fill {
